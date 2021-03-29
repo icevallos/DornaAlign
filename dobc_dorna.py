@@ -2,7 +2,7 @@
 
 import os.path
 import os, sys
-# import numpy as np
+import json
 import subprocess
 from subprocess import Popen, PIPE, STDOUT
 import sys
@@ -29,7 +29,7 @@ def completion(robot):
 def xyz_motion(robot,coord,value):
 
     """
-    Moves the fiber in x y z directions, corrects for horizontal angle in y motions
+    Moves the fiber in x y z directions
     input:
         robot: (Dorna object)
         coord: (string) "x", "y" or "z" for direction of motion
@@ -51,6 +51,41 @@ def xyz_motion(robot,coord,value):
 
     
     return None
+
+def joint_motion(robot,coord,value, movement = 1):
+    """
+    Shorthand function to move robot joints
+    input:
+        robot: (Dorna object)
+        coord: (string) "j0", "j1", "j2", "j3" or "j4" for direction of motion
+        value: (float) angle in degrees
+        movement: 1 for relative, 0 for absolute
+    """
+    completion(robot)
+    if coord == "j0":
+        cmd = {"command" : "move" , "prm" : {"movement" :  movement , "path" : "joint", "j0" : value}}
+        robot.play(cmd)
+    elif coord  == "j1":
+        cmd = {"command" : "move" , "prm" : {"movement" :  movement , "path" : "joint", "j1" : value}}
+        robot.play(cmd)
+    elif coord == "j2":
+        cmd = {"command" : "move" , "prm" : {"movement" :  movement, "path" : "joint", "j2" : value}}
+        robot.play(cmd)
+    elif coord == "j3":
+        cmd = {"command" : "move" , "prm" : {"movement" :  movement, "path" : "joint", "j3" : value}}
+        robot.play(cmd)
+    elif coord == "j4":
+        cmd = {"command" : "move" , "prm" : {"movement" :  movement, "path" : "joint", "j4" : value}}
+        robot.play(cmd)
+
+
+    else:
+        print("Invalid coordinate command")
+
+    
+    return None
+
+
 
 def expose(exptime, logfile, burst = 1):
     # Take images
@@ -93,12 +128,33 @@ def expose(exptime, logfile, burst = 1):
     time.sleep(exptime)
     #subprocess.call(command3,shell=True)
 
-def focus_test(robot, logfile, steps=10, dz = 0.5 , exptime = 1, burst =1):
+def focus_test(robot, logfile, steps=10, dz = 0.5 , exptime = 1., burst =1, x_offset = 0., y_offset = 0.):
+    """
+    Takes through focus image bursts as the robot moves upwards in z.
+
+    input:
+        robot: (Dorna object)
+        logfile: text file
+        steps: (int) number changes in position
+        dz: (float) separation between steps in mm
+        exptime =  (float) exposure in seconds
+        burst = (int) number of images per exposure
+        x_offset = (float) displacement from original x position in mm
+        y_offset = (float) displacement from original y position in mm
+
+
+    """
+
 
     print("Sweeping focus on Z")
 
     start_coord = json.loads(robot.position("xyz"))
     return_cmd = {"command": "move", "prm": {"movement": 0, "path": "line" , "xyz" : start_coord}}
+
+    if x_offset != 0.:
+        xyz_motion(robot, "x", x_offset)
+    if y_offset != 0.:
+        xyz_motion(robot,"y", y_offset)
 
 
     for i in range(steps):
@@ -110,7 +166,7 @@ def focus_test(robot, logfile, steps=10, dz = 0.5 , exptime = 1, burst =1):
         print("z =  " + str(start_coord[2]+dz))
         print(robot.position("xyz"))
         logfile.write('Robot position %s' % str(json.loads(robot.position("xyz"))))
-        Spectro_align_test(exptime,logfile,burst)
+        expose(exptime,logfile,burst)
 
     print("Sweep complete, returning to start position")
     
@@ -120,11 +176,18 @@ def focus_test(robot, logfile, steps=10, dz = 0.5 , exptime = 1, burst =1):
 
 
 def log_setup():
+
+    """
+    Creates log file for image taking, sets up camserver image path
+    """
     
     # Need to change the data directory
     data_dir = '/home/fireball2/SpectroAlign/' + datetime.now().strftime("%y%m%d") +'/'
-    logfile = open(data_dir+'logfile', 'a')
     
+    command = "mkdir -p " + data_dir
+    p= Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+    logfile = open(data_dir+'logfile', 'a')
+
     command = 'cam path ' + data_dir
     p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     output = p.stdout.read()
@@ -155,8 +218,7 @@ def ax_rotation(robot,j0_offset):
     """
 
     rest_cmd  = {"command" : "move", "prm":{"movement" : 0, "path": "joint", "j0" : 0. , "j1" : 145., "j2" : -90, "j3" : 0.0 }}
-    angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : -90, "b": 0}}
-    start_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "j0" : 0 , "j1" : 80., "j2" : -120.}}
+    
     
     robot.play(rest_cmd)
     robot.play({"command" : "move", "prm":{"movement" : 0, "path": "joint", "j0" : j0_offset }})
@@ -165,6 +227,15 @@ def ax_rotation(robot,j0_offset):
 
     return None
 
+def record_pos(robot):
+    """
+    records xyz position as list
+    """
+
+    position = json.loads(robot.position("xyz"))
+    print("x,y,z,a,b =" + str(position))
+
+    return position
 
 
 
@@ -175,12 +246,12 @@ if __name__ == "__main__":
 
     #expose(1)
     print("Loading Dorna commands")
-    logfile = log_setup()
+    #logfile = log_setup()
     
 
     rest_cmd  = {"command" : "move", "prm":{"movement" : 0, "path": "joint", "j0" : 0. , "j1" : 145., "j2" : -90, "j3" : 0.0 , "j4" : 0.0}} 
-    angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : -90, "b": 0}}
-    start_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "j0" : 0 , "j1" : 80., "j2" : -120.}}
+    angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : 0, "b": 0}}
+    start_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "j0" : -7 , "j1" : 50., "j2" : -50.}}
     vertical_cmd = {"command" : "move", "prm":{"movement" : 0, "path": "joint", "j0" : 0. , "j1" : 90., "j2" : 0., "j3" : 0.0 , "j4" : 0.0}}
     reset_j0 = {"command" : "move", "prm":{"movement" : 0, "path": "joint", "j0" : 0. }}
 

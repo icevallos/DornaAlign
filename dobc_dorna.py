@@ -250,7 +250,7 @@ if __name__ == "__main__":
     
 
     rest_cmd  = {"command" : "move", "prm":{"movement" : 0, "path": "joint", "j0" : 0. , "j1" : 145., "j2" : -90, "j3" : 0.0 , "j4" : 0.0}} 
-    angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : 0, "b": 0}}
+    angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : -90, "b": 0}}
     start_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "j0" : -7 , "j1" : 50., "j2" : -50.}}
     vertical_cmd = {"command" : "move", "prm":{"movement" : 0, "path": "joint", "j0" : 0. , "j1" : 90., "j2" : 0., "j3" : 0.0 , "j4" : 0.0}}
     reset_j0 = {"command" : "move", "prm":{"movement" : 0, "path": "joint", "j0" : 0. }}

@@ -25,9 +25,12 @@ class SpectroAlign(object):
     reset_j0 = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed":1000 ,"j0" : 0. }}
 
 
-    def __init__(self,robot,center = None,rel_pos = [0.,0.,0.], j0_offset = 0.,
+    def __init__(self,robot = None ,center = None,rel_pos = [0.,0.,0.], j0_offset = 0.,
                 logfile = None):
-        self.robot = Dorna()
+        if robot == None:
+            self.robot = Dorna()
+        else:
+            self.robot = robot
         
 
         if center == None:

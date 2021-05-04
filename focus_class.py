@@ -175,7 +175,7 @@ class SpectroAlign(object):
 
         while parsed_status['state'] != 0:
             time.sleep(0.5)
-            status = robot.device()
+            status = self.robot.device()
             parsed_status = json.loads(status)
 
         #print("Command is done. On to the next!")

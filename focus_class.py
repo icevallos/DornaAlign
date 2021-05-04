@@ -83,6 +83,19 @@ class SpectroAlign(object):
         output = self.robot.play(cmd)
         return output
 
+    def home(self, joint):
+        """
+        passes joint name to be homed
+        input:
+            joint: (string) name of joint
+        output:
+            dorna play command output
+        """
+
+        output = self.robot.home(joint)
+        return output
+
+
 
     def set_center(self,coords = None):
         """

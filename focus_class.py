@@ -160,7 +160,7 @@ class SpectroAlign(object):
         self.robot.play({"command" : "move", "prm":{"movement" : 0, "speed":1000, "path": "joint", "j0" : offset }})
         self.j0_offset += offset
         self.completion()
-        robot.set_joint({"j0" : 0 })
+        self.robot.set_joint({"j0" : 0 })
 
         return None
 

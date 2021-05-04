@@ -30,7 +30,7 @@ class SpectroAlign(object):
         self.robot = Dorna()
         
 
-        if center = None:
+        if center == None:
             self.center = [0.,0.,0.,0.,0.]
             self.center_set = False
         else:

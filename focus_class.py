@@ -14,10 +14,10 @@ from dorna import Dorna
 rest_cmd  = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed":1000, "j0" : 0. , "j1" : 145., "j2" : -90, "j3" : 0.0 , "j4" : 0.0}} 
 angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : -90, "b": 0}}
 start_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "speed" : 1000, "j0" : -7 , "j1" : 50., "j2" : -50.}}
-vertical_cmd = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed": 500, "j0" : 0. , "j1" : 90., "j2" : 0., "j3" : 0.0 , "j4" : 0.0}}
+vertical_cmd = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed": 1000, "j0" : 0. , "j1" : 90., "j2" : 0., "j3" : 0.0 , "j4" : 0.0}}
 reset_j0 = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed":1000 ,"j0" : 0. }}
 
-class focal_test(object):
+class SpectroAlign(object):
     rest_cmd  = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed":1000, "j0" : 0. , "j1" : 145., "j2" : -90, "j3" : 0.0 , "j4" : 0.0}}
     angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : -90, "b": 0}}
     start_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "speed" : 1000, "j0" : -7 , "j1" : 50., "j2" : -50.}}
@@ -25,30 +25,70 @@ class focal_test(object):
     reset_j0 = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed":1000 ,"j0" : 0. }}
 
 
-    def __init__(self,robot,center = [0.,0.,0.,0.,0.],rel_pos = [0.,0.,0.], j0_offset = 0.,
+    def __init__(self,robot,center = None,rel_pos = [0.,0.,0.], j0_offset = 0.,
                 logfile = None):
-        self.robot = robot
-        self.center = center
+        self.robot = Dorna()
+        
+
+        if center = None:
+            self.center = [0.,0.,0.,0.,0.]
+            self.center_set = False
+        else:
+            self.center = center
+            self.center_set = True
+
         self.rel_pos = rel_pos
         self.j0_offset = j0_offset
         self.logfile = logfile
 
 
+    def __repr__(self):
+        return self.robot.device()
 
 
-    def connect(self,port =  "dev/ttyACM0"):
+    def connect(self,port =  "/dev/ttyACM0"):
+        """
+        connects the robot arm.
+        input:
+            port: (string) specified port for robot
+        """
         self.robot.connect(port)
-        return None
+
+        return self.robot.device()
 
     def checkout(self):
+        """
+        Disconnect robot and terminate robot dorna object
+        """
         self.robot.disconnect()
         self.robot.terminate()
-        return None
+
+        return self.robot.device()
 
 
     #### Robot motion and dorna parameter methods
 
-    def set_center(self,coords = None):     
+    def play(self, cmd):
+        """
+        passes Dorna command to embeded Dorna object
+        input:
+            cmd: (dict) in Dorna format for motions
+        output:
+            dorna play command output
+        """
+
+        output = self.robot.play(cmd)
+        return output
+
+
+    def set_center(self,coords = None):
+        """
+        Sets center of field coordinates at current robot position, or at specified coords.
+        input:
+            coords: (list of floats) x,y,z,a,b position of arm in dorna coordinates
+        output:
+            (list of floats) position of new center in dorna xyzab format
+        """     
 
         if coords == None:
             self.center  = json.loads(self.robot.position("xyz"))
@@ -58,10 +98,14 @@ class focal_test(object):
         print("Center of field :" + str (self.center))
 
         self.logfile.write("\nField Center : " + str(self.center))
+        self.center_set = True
 
         return self.center
 
     def find_rel(self):
+        """
+        Calculates and updates relative position to center of field
+        """
 
         robot_pos = json.loads(self.robot.position("xyz"))
         x = robot_pos[0] - self.center[0] 
@@ -74,6 +118,18 @@ class focal_test(object):
 
         return self.rel_pos
 
+    def to_center(self):
+        """
+        Returns the robot to the center of field as recorded.
+        """
+        if self.center_set:
+            center_cmd =  {"command": "move", "prm": {"movement": 0, "path": "line" , "xyz" : self.center }}
+            self.robot.play(center_cmd)
+            self.find_rel()
+        else:
+            print("Center coordinate has not been set")
+
+        return None
 
 
 
@@ -84,8 +140,8 @@ class focal_test(object):
 
         """    
     
-        self.robot.play(focal_test.rest_cmd)
-        self.robot.play({"command" : "move", "prm":{"movement" : 0, "speed":1000, "path": "joint", "j0" : j0_offset }})
+        self.robot.play(SpectroAlign.rest_cmd)
+        self.robot.play({"command" : "move", "prm":{"movement" : 0, "speed":1000, "path": "joint", "j0" : offset }})
         self.j0_offset += offset
         self.completion()
         robot.set_joint({"j0" : 0 })
@@ -93,6 +149,9 @@ class focal_test(object):
         return None
 
     def completion(self):
+        """
+        Wait until previous robot motion is completed.
+        """
 
 
         status = self.robot.device()
@@ -129,6 +188,8 @@ class focal_test(object):
 
         else:
             print("Invalid coordinate command")
+
+        self.find_rel()
 
         
         return None
@@ -169,7 +230,9 @@ class focal_test(object):
 
     def find_pos(self):
         """
-        outputs xyz position as list
+        returns position in dorna xyz coordinates as list
+        output:
+            (list of floats) xyzab coordinates
         """
 
         position = json.loads(self.robot.position("xyz"))
@@ -242,7 +305,7 @@ class focal_test(object):
 
         ### Combined routines (exposures + motion)
 
-    def focus_test(self, steps=10, dz = 0.5 , exptime = 1., burst =1, x_offset = 0., y_offset = 0.):
+    def focus_test(self, steps=10, dz = 0.5 , exptime = 1., burst =1, dx0 = 0., dy0 = 0.,dz0 = 0.):
         """
         Takes through focus image bursts as the robot moves upwards in z.
 
@@ -253,8 +316,9 @@ class focal_test(object):
             dz: (float) separation between steps in mm
             exptime =  (float) exposure in seconds
             burst = (int) number of images per exposure
-            x_offset = (float) displacement from original x position in mm
-            y_offset = (float) displacement from original y position in mm
+            dx0 = (float) displacement from original x position in mm
+            dy0 = (float) displacement from original y position in mm
+            dz0 = (float) displacement from original z position in mm
         """
 
 
@@ -263,10 +327,12 @@ class focal_test(object):
         start_coord = json.loads(self.robot.position("xyz"))
         return_cmd = {"command": "move", "prm": {"movement": 0, "path": "line" , "xyz" : start_coord}}
 
-        if x_offset != 0.:
-            self.xyz_motion( "x", x_offset)
-        if y_offset != 0.:
-            self.xyz_motion("y", y_offset)
+        if dx0 != 0.:
+            self.xyz_motion( "x", dx0)
+        if dy0 != 0.:
+            self.xyz_motion("y", dy0)
+        if dz0 != 0.:
+            self.xyz_motion("z",dz0)
 
 
         for i in range(steps):
@@ -286,6 +352,8 @@ class focal_test(object):
         self.robot.play(return_cmd)
         self.completion()
         return None
+
+
 
 
 

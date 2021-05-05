@@ -68,6 +68,20 @@ class SpectroAlign(object):
 
         return self.robot.device()
 
+    def calibrate(self,position = [0.,90.,0.,0.,0.]):
+        """
+        Defines current joint position of the robot in the Dorna joint system.
+        defaults to calibrating on the stretched upwards position
+        input:
+            position: (list of floats) [j0,j1,j2,j3,j4] in degrees
+        returns:
+            new joint values
+        """
+        self.completion()
+        self.robot.calibrate(position)
+        self.robot.save_config()
+        return self.robot.position()
+
 
     #### Robot motion and dorna parameter methods
 
@@ -205,12 +219,13 @@ class SpectroAlign(object):
         else:
             print("Invalid coordinate command")
 
+        self.completion()
         self.find_rel()
 
         
         return None
 
-    def joint_motion(self,coord,value,speed = 2540 ,movement = 1):
+    def joint_motion(self,coord,value,speed = 1000 ,movement = 1):
         """
         Shorthand function to move robot joints
         input:

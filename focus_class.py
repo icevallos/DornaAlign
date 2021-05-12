@@ -11,6 +11,8 @@ from datetime import datetime,timedelta
 
 from dorna import Dorna
 
+## these are some useful commands for the robot
+## I type them here so I can use them quickly on the command line
 rest_cmd  = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed":1000, "j0" : 0. , "j1" : 145., "j2" : -90, "j3" : 0.0 , "j4" : 0.0}} 
 angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : -90, "b": 0}}
 start_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "speed" : 1000, "j0" : -7 , "j1" : 50., "j2" : -50.}}
@@ -26,7 +28,12 @@ class SpectroAlign(object):
 
 
     def __init__(self,robot = None ,center = None,rel_pos = [0.,0.,0.], j0_offset = 0.,
-                logfile = None):
+                data_dir = None):
+
+        """
+        This creates the python object, we can specify initial conditions for the robot
+        Typically, we assume we're starting from the rest position, pointed away from the table.
+        """
         if robot == None:
             self.robot = Dorna()
         else:
@@ -39,6 +46,13 @@ class SpectroAlign(object):
         else:
             self.center = center
             self.center_set = True
+
+        if data_dir == None:
+            self.data_dir = '/home/fireball2/SpectroAlign/' + datetime.now().strftime("%y%m%d") +'/'
+        else:
+            self.data_dir =  data_dir
+
+        self.logfile  =  open(data_dir + "logfile", 'a')
 
         self.rel_pos = rel_pos
         self.j0_offset = j0_offset
@@ -53,7 +67,7 @@ class SpectroAlign(object):
         """
         connects the robot arm.
         input:
-            port: (string) specified port for robot
+            port: (string) port address for robot
         """
         self.robot.connect(port)
 
@@ -95,6 +109,7 @@ class SpectroAlign(object):
         """
 
         output = self.robot.play(cmd)
+        self.find_rel()
         return output
 
     def home(self, joint):
@@ -125,9 +140,9 @@ class SpectroAlign(object):
         else:
             self.center = coords
 
-        print("Center of field :" + str (self.center))
+        print("Fiber Center :" + str (self.center))
 
-        self.logfile.write("\nField Center : " + str(self.center))
+        self.logfile.write("\nSet Fiber Center [mm]: " + str(self.center))
         self.center_set = True
 
         return self.center
@@ -154,8 +169,7 @@ class SpectroAlign(object):
         """
         if self.center_set:
             center_cmd =  {"command": "move", "prm": {"movement": 0, "path": "line" , "xyz" : self.center }}
-            self.robot.play(center_cmd)
-            self.find_rel()
+            self.play(center_cmd)
         else:
             print("Center coordinate has not been set")
 
@@ -170,8 +184,8 @@ class SpectroAlign(object):
 
         """    
     
-        self.robot.play(SpectroAlign.rest_cmd)
-        self.robot.play({"command" : "move", "prm":{"movement" : 0, "speed":1000, "path": "joint", "j0" : offset }})
+        self.play(SpectroAlign.rest_cmd)
+        self.play({"command" : "move", "prm":{"movement" : 0, "speed":1000, "path": "joint", "j0" : offset }})
         self.j0_offset += offset
         self.completion()
         self.robot.set_joint({"j0" : 0 })
@@ -208,13 +222,13 @@ class SpectroAlign(object):
         self.completion()
         if coord == "x":
             grid_x = {"command" : "move" , "prm" : {"movement" :  1 ,"speed": speed, "path" : "line", "x" : value}}
-            self.robot.play(grid_x)
+            self.play(grid_x)
         elif coord  == "z":
             grid_z = {"command" : "move" , "prm" : {"movement" :  1 ,"speed": speed, "path" : "line", "z" : value}}
-            self.robot.play(grid_z)
+            self.play(grid_z)
         elif coord == "y":
             grid_y = {"command" : "move" , "prm" : {"movement" :  1 ,"speed": speed, "path" : "line", "y" : value}}
-            self.robot.play(grid_y)
+            self.play(grid_y)
 
         else:
             print("Invalid coordinate command")
@@ -238,19 +252,19 @@ class SpectroAlign(object):
         self.completion()
         if coord == "j0":
             cmd = {"command" : "move" , "prm" : {"movement" :  movement ,"speed" : speed, "path" : "joint", "j0" : value}}
-            self.robot.play(cmd)
+            self.play(cmd)
         elif coord  == "j1":
             cmd = {"command" : "move" , "prm" : {"movement" :  movement ,"speed" : speed, "path" : "joint", "j1" : value}}
-            self.robot.play(cmd)
+            self.play(cmd)
         elif coord == "j2":
             cmd = {"command" : "move" , "prm" : {"movement" :  movement,"speed" : speed, "path" : "joint", "j2" : value}}
-            self.robot.play(cmd)
+            self.play(cmd)
         elif coord == "j3":
             cmd = {"command" : "move" , "prm" : {"movement" :  movement,"speed" : speed, "path" : "joint", "j3" : value}}
-            self.robot.play(cmd)
+            self.play(cmd)
         elif coord == "j4":
             cmd = {"command" : "move" , "prm" : {"movement" :  movement,"speed" : speed, "path" : "joint", "j4" : value}}
-            self.robot.play(cmd)
+            self.play(cmd)
 
 
         else:
@@ -279,33 +293,36 @@ class SpectroAlign(object):
 
         """
         Creates log file for image taking, sets up camserver image path
+
+        output
+            (textio) pointer to file.
         """
 
-        data_dir = '/home/fireball2/SpectroAlign/' + datetime.now().strftime("%y%m%d") +'/'
+        #data_dir = '/home/fireball2/SpectroAlign/' + datetime.now().strftime("%y%m%d") +'/'
     
         command = "mkdir -p " + data_dir
         p= Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-        self.logfile = open(data_dir+'logfile', 'a')
+        #logfile = open(data_dir+'logfile', 'a')
 
         command = 'cam path ' + data_dir
         p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
         output = p.stdout.read()
-        self.logfile.write('Data directory=' + data_dir + "\n")
-        return self.logfile
+        self.logfile.write('Data directory=' + self.data_dir + "\n")
+        return None
 
     def expose(self,exptime, burst = 1):
         # Take images
         command = 'cam imno' 
         p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-        output = p.stdout.read()
-        self.logfile.write('\nimage%06d.fits' % int(output))
+        imno1 = p.stdout.read()
+        #self.logfile.write('\nimage%06d.fits' % int(imno1))
         command0 = 'cam burst='+str(burst)
         print(command0)
         # Run command
         p = Popen(command0, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
         # Write to the log file
-        output = p.stdout.read()
-        self.logfile.write('\nBurst param= %s' % str(output))
+        bpar = p.stdout.read()
+        #self.logfile.write('\nBurst param= %s' % str(bpar))
         #subprocess.call(command0,shell=True)
         
         # Set the exposure time
@@ -313,9 +330,10 @@ class SpectroAlign(object):
         print(command1)
         # Run command 
         p = Popen(command1, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-        # Write to the log file
-        output = p.stdout.read()
-        self.logfile.write('\nExposure time= %s' % str(output))
+       
+        expout = p.stdout.read()
+        #self.logfile.write('\nExposure time= %s' % str(expout))
+
         #subprocess.call(command1,shell=True)
 
         # command2 = './cam emgain='+str(emgain)
@@ -331,7 +349,20 @@ class SpectroAlign(object):
         print(command3)
         # Run command
         p = Popen(command3, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-        time.sleep(exptime)
+
+         # Write to the log file
+        for i in range(burst):
+            self.logfile.write('\nimage%06d.fits' % int(imno1+i))
+            self.logfile.write('\t%s' % str(expout))
+            self.logfile.write('\t%s' % str(bpar))
+            self.logfile.write('\t%s' % str(burst))
+            self.logfile.write('\t%s' % str(self.rel_pos[0]))
+            self.logfile.write('\t%s' % str(self.rel_pos[1]))
+            self.logfile.write('\t%s' % str(self.rel_pos[2]))
+            self.logfile.write
+            
+
+        time.sleep(exptime*burst)
         return None
 
         ### Combined routines (exposures + motion)
@@ -367,20 +398,18 @@ class SpectroAlign(object):
 
 
         for i in range(steps):
-            
-            
             z_cmd = {"command" : "move" , "prm" : {"movement" :  0 , "path" : "line", "z" : start_coord[2]+(dz*i)}}
-            self.robot.play(z_cmd)
+            self.play(z_cmd)
             self.completion()
             print("z =  " + str(start_coord[2]+dz))
-            self.find_rel()
-            print(self.rel_pos)
-            self.logfile.write('\nRelative position [mm] %s' % str(self.rel_pos))
+            
+            print('\nRelative position [mm] %s' % str(self.rel_pos))
+
             self.expose(exptime,burst)
 
         print("Sweep complete, returning to start position")
         
-        self.robot.play(return_cmd)
+        self.play(return_cmd)
         self.completion()
         return None
 

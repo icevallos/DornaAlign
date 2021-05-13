@@ -56,7 +56,6 @@ class SpectroAlign(object):
 
         self.rel_pos = rel_pos
         self.j0_offset = j0_offset
-        self.logfile = logfile
 
 
     def __repr__(self):

@@ -52,7 +52,7 @@ class SpectroAlign(object):
         else:
             self.data_dir =  data_dir
 
-        self.logfile  =  open(data_dir + "logfile", 'a')
+        self.logfile  =  open(self.data_dir + "logfile", 'a')
 
         self.rel_pos = rel_pos
         self.j0_offset = j0_offset

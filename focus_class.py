@@ -34,12 +34,6 @@ class SpectroAlign(object):
         This creates the python object, we can specify initial conditions for the robot
         Typically, we assume we're starting from the rest position, pointed away from the table.
         """
-        if robot == None:
-            self.robot = Dorna()
-        else:
-            self.robot = robot
-        
-
         if center == None:
             self.center = [0.,0.,0.,0.,0.]
             self.center_set = False
@@ -56,6 +50,11 @@ class SpectroAlign(object):
 
         self.rel_pos = rel_pos
         self.j0_offset = j0_offset
+
+        if robot == None:
+            self.robot = Dorna()
+        else:
+            self.robot = robot
 
 
     def __repr__(self):
@@ -174,6 +173,23 @@ class SpectroAlign(object):
 
         return None
 
+    def to_xyz(self,coords):
+        """
+        Moves robot to given position in xyz
+        """
+
+        motion_cmd = {"command": "move", "prm": {"movement": 0, "path": "line" , "xyz" : coords}}
+        self.play(motion_cmd)
+        return None
+
+    def to_joint(self,coords):
+        """
+        Moves robot to given position in joint coord.
+        """
+
+        motion_cmd = {"command": "move", "prm": {"movement": 0, "path": "line" , "joint" : coords}}
+        self.play(motion_cmd)
+        return None
 
 
     def ax_rotation(self,offset):
@@ -299,11 +315,11 @@ class SpectroAlign(object):
 
         #data_dir = '/home/fireball2/SpectroAlign/' + datetime.now().strftime("%y%m%d") +'/'
     
-        command = "mkdir -p " + data_dir
+        command = "mkdir -p " + self.data_dir
         p= Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
         #logfile = open(data_dir+'logfile', 'a')
 
-        command = 'cam path ' + data_dir
+        command = 'cam path ' + self.data_dir
         p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
         output = p.stdout.read()
         self.logfile.write('Data directory=' + self.data_dir + "\n")
@@ -358,7 +374,7 @@ class SpectroAlign(object):
             self.logfile.write('\t%s' % str(self.rel_pos[0]))
             self.logfile.write('\t%s' % str(self.rel_pos[1]))
             self.logfile.write('\t%s' % str(self.rel_pos[2]))
-            self.logfile.write
+
             
 
         time.sleep(exptime*burst)

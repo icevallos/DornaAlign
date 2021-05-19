@@ -19,6 +19,8 @@ start_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "s
 vertical_cmd = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed": 1000, "j0" : 0. , "j1" : 90., "j2" : 0., "j3" : 0.0 , "j4" : 0.0}}
 reset_j0 = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed":1000 ,"j0" : 0. }}
 
+centerfield = [334.97,-5.0013,306.99,-90,0] #xyz center of field for zn lamp spot.
+
 class SpectroAlign(object):
     rest_cmd  = {"command" : "move", "prm":{"movement" : 0, "path": "joint","speed":1000, "j0" : 0. , "j1" : 145., "j2" : -90, "j3" : 0.0 , "j4" : 0.0}}
     angle_cmd = {"command" : "move" , "prm" : {"movement" : 0 , "path" : "joint", "a" : -90, "b": 0}}
@@ -46,7 +48,9 @@ class SpectroAlign(object):
         else:
             self.data_dir =  data_dir
 
-        self.logfile  =  open(self.data_dir + "logfile", 'a')
+        self.log_str  =  self.data_dir + "logfile"
+
+        #self.logfile  =  open(self.data_dir + "logfile", 'a')
 
         self.rel_pos = rel_pos
         self.j0_offset = j0_offset
@@ -94,6 +98,18 @@ class SpectroAlign(object):
         self.robot.save_config()
         return self.robot.position()
 
+    def log_line(self, line):
+        """
+        Write line to logfile
+        """
+
+        logfile  =  open(self.logdir, 'a')
+        logfile.write(line)
+        logfile.close()
+
+        return None
+
+
 
     #### Robot motion and dorna parameter methods
 
@@ -140,7 +156,7 @@ class SpectroAlign(object):
 
         print("Fiber Center :" + str (self.center))
 
-        self.logfile.write("\nSet Fiber Center [mm]: " + str(self.center))
+        self.log_line("\nSet Fiber Center [mm]: " + str(self.center))
         self.center_set = True
 
         return self.center
@@ -180,6 +196,8 @@ class SpectroAlign(object):
 
         motion_cmd = {"command": "move", "prm": {"movement": 0, "path": "line" , "xyz" : coords}}
         self.play(motion_cmd)
+        self.completion()
+        self.find_rel()
         return None
 
     def to_joint(self,coords):
@@ -189,6 +207,8 @@ class SpectroAlign(object):
 
         motion_cmd = {"command": "move", "prm": {"movement": 0, "path": "line" , "joint" : coords}}
         self.play(motion_cmd)
+        self.completion()
+        self.find_rel()
         return None
 
 
@@ -285,6 +305,8 @@ class SpectroAlign(object):
         else:
             print("Invalid coordinate command")
 
+        self.completion()
+        self.find_rel()
         
         return None
 
@@ -322,7 +344,9 @@ class SpectroAlign(object):
         command = 'cam path ' + self.data_dir
         p = Popen(command, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
         output = p.stdout.read()
-        self.logfile.write('Data directory=' + self.data_dir + "\n")
+
+        self.log_line('Data directory=' + self.data_dir + "\n")
+        
         return None
 
     def expose(self,exptime, burst = 1):
@@ -367,13 +391,13 @@ class SpectroAlign(object):
 
          # Write to the log file
         for i in range(burst):
-            self.logfile.write('\nimage%06d.fits' % int(imno1+i))
-            self.logfile.write('\t%s' % str(expout))
-            self.logfile.write('\t%s' % str(bpar))
-            self.logfile.write('\t%s' % str(burst))
-            self.logfile.write('\t%s' % str(self.rel_pos[0]))
-            self.logfile.write('\t%s' % str(self.rel_pos[1]))
-            self.logfile.write('\t%s' % str(self.rel_pos[2]))
+            self.log_line('\nimage%06d.fits' % str(imno1+i))
+            self.log_line('\t%s' % str(expout))
+            self.log_line('\t%s' % str(bpar))
+            self.log_line('\t%s' % str(burst))
+            self.log_line('\t%s' % str(self.rel_pos[0]))
+            self.log_line('\t%s' % str(self.rel_pos[1]))
+            self.log_line('\t%s' % str(self.rel_pos[2]))
 
             
 

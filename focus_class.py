@@ -103,7 +103,7 @@ class SpectroAlign(object):
         Write line to logfile
         """
 
-        logfile  =  open(self.logdir, 'a')
+        logfile  =  open(self.log_str, 'a')
         logfile.write(line)
         logfile.close()
 

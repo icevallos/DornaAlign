@@ -74,10 +74,10 @@ class SpectroAlign(object):
     ####### Laser readout tools
 
     def laser_read():
-    '''
-    launches laser_main program and reads measurement
-    output: (float) laser distance measured [mm]
-    '''
+        '''
+        launches laser_main program and reads measurement
+        output: (float) laser distance measured [mm]
+        '''
 
         command = "./laser_main"
         result = subprocess.run([], stdout = PIPE)

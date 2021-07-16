@@ -73,7 +73,7 @@ class SpectroAlign(object):
 
     ####### Laser readout tools
 
-    def laser_read():
+    def laser_read(self):
         '''
         launches laser_main program and reads measurement
         output: (float) laser distance measured [mm]

@@ -79,8 +79,12 @@ class SpectroAlign(object):
         output: (float) laser distance measured [mm]
         '''
 
-        command = "./laser_main"
-        result = subprocess.run([], stdout = PIPE)
+        cd_cmd = "cd /home/fireball2/laser"
+        subprocess.run(cd_cmd)
+
+        laser_cmd = "./laser_main"
+
+        result = subprocess.run(laser_cmd, stdout = PIPE)
         print(result.stdout.decode())
         i = result.rfind("M0,") + 3
         if i == -1:
@@ -105,17 +109,18 @@ class SpectroAlign(object):
             self.laser = True
             return None
 
-    def z_correct(self,z_target = None ):
+    def z_correct(self):
         '''
         adjusts z position and relative coordinates to account for drift
         '''
-        if self.laser = True:
-        self.xyz_v2(dz = z_offset)
-        self.set_center()
-
-        return None
-
-
+        if self.laser == True:
+            readout = self.laser_read()
+            z_offset = self.z_laser - readout
+            self.xyz_v2(dz = z_offset)
+            self.set_center()
+            return None
+        else:
+            return None
 
     def connect(self,port =  "/dev/cu.usbmodem14101"):
         """

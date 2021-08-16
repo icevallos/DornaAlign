@@ -155,6 +155,7 @@ class SpectroAlign(object):
         if self.laser_set == True:
             readout = self.laser_read()
             z_offset = self.z_laser - readout
+            print('Laser offset correction: %s mm' % str(self.z_offset))
             self.xyz_v2(z = z_offset)
             self.set_center()
             return None
@@ -269,7 +270,7 @@ class SpectroAlign(object):
         else:
             self.center = coords
 
-        print("Fiber Center :" + str (self.center))
+        #print("Fiber Center :" + str (self.center))
 
         #self.log_line("\nSet Fiber Center [mm]: " + str(self.center))
         self.center_set = True
@@ -290,7 +291,7 @@ class SpectroAlign(object):
 
         self.rel_pos  = [x,y,z,a,b]
 
-        print("relative position : " + str(self.rel_pos))
+        #print("relative position : " + str(self.rel_pos))
 
         return self.rel_pos
 
@@ -389,7 +390,7 @@ class SpectroAlign(object):
             print("Invalid movement parameter!")
             return None
 
-        print(input_xyz)
+        #print(input_xyz)
         motion = {"command" : "move" , "prm" : {"movement" :  movement ,"speed": speed,
              "path" : "line", "x" : input_xyz[0], "y" : input_xyz[1],"z" : input_xyz[2]}}
 
@@ -675,6 +676,7 @@ class SpectroAlign(object):
 
         self.laser_read(set_target = True)
 
+        
         print("moving in grid")
 
         for i in range(3):
@@ -684,7 +686,13 @@ class SpectroAlign(object):
                 self.focus_test(steps = 5)
                 self.z_correct()
 
+        
+
+
+
         self.play(return_cmd)
+
+
 
         return None
 

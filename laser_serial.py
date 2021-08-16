@@ -25,13 +25,14 @@ class LaserIO(object):
         out = self.ser_io.readline()
         print(out)
 
-    def measure(self):
+    def measure(self,verbose = True):
         '''
         Get laser head measurement through serial
         '''
         self.ser_io.write('M0\r')
         out = self.ser_io.readline()
-        print(out)
+        if verbose: 
+            print(out)
 
         i = out.rfind("M0,") + 3
         if i == -1:

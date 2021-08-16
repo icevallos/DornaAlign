@@ -684,6 +684,7 @@ class SpectroAlign(object):
 
                 self.xyz_v2(x = start_coord[0]+((i-2)*gx), y = start_coord[1]+((j-2)*gy), movement = 0)
                 self.focus_test(steps = 5)
+                self.xyz_v2(x = start_coord[0], y = start_coord[1], movement = 0)
                 self.z_correct()
 
         

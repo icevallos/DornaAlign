@@ -94,10 +94,11 @@ class SpectroAlign(object):
 
         if (self.laser_set):
             out = self.laser.measure()
-            return out
-
             if set_target:
                 self.z_laser = out
+            return out
+
+            
 
         else:
             print("Laser not configured")

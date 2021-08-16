@@ -155,7 +155,7 @@ class SpectroAlign(object):
         if self.laser_set == True:
             readout = self.laser_read()
             z_offset = self.z_laser - readout
-            print('Laser offset correction: %s mm' % str(self.z_offset))
+            print('Laser offset correction: %s mm' % str(z_offset))
             self.xyz_v2(z = z_offset)
             self.set_center()
             return None
@@ -376,7 +376,7 @@ class SpectroAlign(object):
         start_joint = json.loads(self.robot.position(space = "joint"))  
         start_xyz = json.loads(self.robot.position(space = "xyz")) 
         input_xyz = [x,y,z]
-        print(input_xyz)
+        #print(input_xyz)
 
         if movement == 0:
             for i in range(3):

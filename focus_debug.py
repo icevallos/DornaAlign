@@ -9,6 +9,10 @@ from subprocess import Popen, PIPE, STDOUT, run
 import sys
 import time
 from datetime import datetime,timedelta
+from laser_serial import LaserIO
+
+import io
+import serial
 
 
 from dorna import Dorna
@@ -32,7 +36,7 @@ class SpectroAlign(object):
 
 
     def __init__(self,robot = None ,center = None,rel_pos = [0.,0.,0.,0.,0.], j0_offset = 0.,
-                data_dir = None, laser = False):
+                data_dir = None,  laser = None):
 
         """
         This creates the python object, we can specify initial conditions for the robot
@@ -63,8 +67,15 @@ class SpectroAlign(object):
             self.robot = robot
 
         self.imno = 0
-        self.laser = laser
-        self.z_laser  = 0.
+
+        if laser == None:
+            self.laser = None
+            self.laser_set = False
+        else:
+            self.laser = laser
+            self.laser_set = True
+
+        self.z_laser  = 0
 
 
 
@@ -79,6 +90,17 @@ class SpectroAlign(object):
         output: (float) laser distance measured [mm]
         '''
 
+        if (self.laser_set):
+            out = self.laser.measure()
+            return out
+
+        else:
+            print("Laser not configured")
+            return None
+
+
+
+        '''
         cd_cmd = "cd /home/fireball2/laser"
         subprocess.run(cd_cmd)
 
@@ -93,13 +115,25 @@ class SpectroAlign(object):
         j = result[i:].find[","]
 
         distance  = float(result[i:i+j])
-        return distance
+        return distance '''
 
-    def set_laser(self):
+    def setup_laser(self):
         '''
-        set laser readout value
+        Open serial connection to laser, creates laser_serial object
         '''
+        if (self.laser_set):
+            print("Laser port already open")
+            return None
 
+
+        self.laser = LaserIO()
+        self.laser_set  = True
+        self.z_laser = self.laser.measure()
+        return None
+
+
+
+        '''
         readout  = self.laser_read()
         if readout == None:
             print("Laser not found")
@@ -107,7 +141,7 @@ class SpectroAlign(object):
         else:
             self.z_laser = readout
             self.laser = True
-            return None
+            return None'''
 
     def z_correct(self):
         '''
@@ -122,7 +156,7 @@ class SpectroAlign(object):
         else:
             return None
 
-    def connect(self,port =  "/dev/cu.usbmodem14101"):
+    def connect(self,port =  "/dev/ttyACM0"): ##"/dev/cu.usbmodem14101" for mac
         """
         connects the robot arm.
         input:

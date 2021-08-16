@@ -75,7 +75,7 @@ class SpectroAlign(object):
             self.laser = laser
             self.laser_set = True
 
-        self.z_laser  = 0
+        self.z_laser  = 0.
 
 
 
@@ -84,15 +84,20 @@ class SpectroAlign(object):
 
     ####### Laser readout tools
 
-    def laser_read(self):
+    def laser_read(self, set_target  = False):
         '''
         launches laser_main program and reads measurement
         output: (float) laser distance measured [mm]
+
+        Set target records value to Z attribute
         '''
 
         if (self.laser_set):
             out = self.laser.measure()
             return out
+
+            if set_target:
+                self.z_laser = out
 
         else:
             print("Laser not configured")
@@ -147,13 +152,14 @@ class SpectroAlign(object):
         '''
         adjusts z position and relative coordinates to account for drift
         '''
-        if self.laser == True:
+        if self.laser_set == True:
             readout = self.laser_read()
             z_offset = self.z_laser - readout
             self.xyz_v2(dz = z_offset)
             self.set_center()
             return None
         else:
+            print("Laser not configured!")
             return None
 
     def connect(self,port =  "/dev/ttyACM0"): ##"/dev/cu.usbmodem14101" for mac
@@ -594,10 +600,12 @@ class SpectroAlign(object):
             self.log_line('\t%s' % str(self.rel_pos[0]))
             self.log_line('\t%s' % str(self.rel_pos[1]))
             self.log_line('\t%s' % str(self.rel_pos[2]))
+            if self.laser_set:
+                self.log_line('\t%s' % str(self.laser_read()))
 
             
 
-        time.sleep(exptime*burst)
+        time.sleep(exptime*burst) 
         self.imno += burst
         return None
 
@@ -641,6 +649,11 @@ class SpectroAlign(object):
             
             print('Relative position [mm] %s' % str(self.rel_pos))
 
+            if self.laser_set:
+                ext_z = self.laser_read()
+
+
+
             self.expose(exptime,burst)
 
         print("Sweep complete, returning to start position")
@@ -657,12 +670,16 @@ class SpectroAlign(object):
         start_coord = json.loads(self.robot.position("xyz"))
         return_cmd = {"command": "move", "prm": {"movement": 0, "path": "line" , "xyz" : start_coord}}
 
+        self.laser_read(set_target = True)
+
         print("moving in grid")
 
         for i in range(3):
             for j in range(3):
+
                 self.xyz_v2(x = start_coord[0]+((i-2)*gx), y = start_coord[1]+((j-2)*gy), movement = 0)
                 self.focus_test(steps = 5)
+                self.z_correct()
 
         self.play(return_cmd)
 

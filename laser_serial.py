@@ -7,11 +7,11 @@ import io
 class LaserIO(object):
 
 
-    def __init__(self, port_name = "/dev/ttyUSB0"):
+    def __init__(self, laser_port = "/dev/ttyUSB0"):
 
 
-        self.port_name = port_name
-        self.ser = serial.Serial(self.port_name,9600,timeout = 1)
+        self.laser_port = laser_port
+        self.ser = serial.Serial(self.laser_port,9600,timeout = 1)
 
         self.ser_io = io.TextIOWrapper(io.BufferedRWPair(self.ser, self.ser, 1),  
                                newline = '\r',
@@ -38,9 +38,9 @@ class LaserIO(object):
             print("M0 measurement not found")
             return None
         j = out[i:].find(",")
-        print(i)
+        #print(i)
         head_val =  out[i:i+j]
-        print(head_val)
+        #print(head_val)
 
         if self.isfloat(head_val):
             distance  = float(head_val)

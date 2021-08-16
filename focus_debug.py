@@ -50,7 +50,7 @@ class SpectroAlign(object):
             self.center_set = True
 
         if data_dir == None:
-            self.data_dir = '/Users/ignacio/' + datetime.now().strftime("%y%m%d") +'/'
+            self.data_dir =  "/home/fireball2/SpectroAlign/" + datetime.now().strftime("%y%m%d") +'/' #'/Users/ignacio/' + datetime.now().strftime("%y%m%d") +'/'
         else:
             self.data_dir =  data_dir
 
@@ -155,7 +155,7 @@ class SpectroAlign(object):
         if self.laser_set == True:
             readout = self.laser_read()
             z_offset = self.z_laser - readout
-            self.xyz_v2(dz = z_offset)
+            self.xyz_v2(z = z_offset)
             self.set_center()
             return None
         else:
@@ -193,6 +193,8 @@ class SpectroAlign(object):
         """
         self.robot.disconnect()
         self.robot.terminate()
+        if self.laser_set:
+            self.laser.close()
 
         return self.robot.device()
 
@@ -269,7 +271,7 @@ class SpectroAlign(object):
 
         print("Fiber Center :" + str (self.center))
 
-        self.log_line("\nSet Fiber Center [mm]: " + str(self.center))
+        #self.log_line("\nSet Fiber Center [mm]: " + str(self.center))
         self.center_set = True
 
         return self.center
@@ -429,9 +431,10 @@ class SpectroAlign(object):
                     input_joint[i] = start_joint[i]
 
         elif movement == 1:
-            if input_joint[i] == None:
-                    input_joint[i] = 0.0
-            
+            for i in range(5):
+                if input_joint[i] == None:
+                        input_joint[i] = 0.0
+                
         else:
             print("Invalid movement parameter!")
             return None

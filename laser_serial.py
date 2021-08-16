@@ -38,7 +38,7 @@ class LaserIO(object):
             print("M0 measurement not found")
             return None
         j = out[i:].find(",")
-
+        print(i)
         head_val =  out[i:i+j]
         print(head_val)
 
